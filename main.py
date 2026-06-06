@@ -31,6 +31,8 @@ from config import (
     PHASE2_DELAY_HOURS_MIN,
     PHASE2_DELAY_HOURS_MAX,
     PHASE3_DELAY_HOURS,
+    DEMO_MODE,
+    WEWORK_WEBHOOK_URL,
 )
 from db.connection import init_db
 from pipeline.deduper import (
@@ -51,6 +53,7 @@ from pipeline.searcher import (
     extract_note_id,
 )
 from pipeline.analyzer import judge_note, judge_comments, generate_reply
+from pipeline.notifier import send_buyer_alert, send_startup_notice
 from pipeline.interactor import (
     follow_author,
     comment_note,
@@ -228,6 +231,33 @@ def _search_and_classify():
             )
             logger.info(f"  ✅ AI 确认买家! ID={record_id}, "
                         f"品牌={detected_brand}, 商品={specific_product}")
+
+            # 生成话术（生成评论和私信内容）
+            reply = generate_reply(
+                title=title,
+                content=note_content,
+                brand=detected_brand,
+                product=specific_product,
+            )
+
+            # Demo 模式：推送到企业微信
+            if DEMO_MODE:
+                send_buyer_alert(
+                    webhook_url=WEWORK_WEBHOOK_URL,
+                    title=title,
+                    author=author,
+                    brand=detected_brand,
+                    product=specific_product or "",
+                    confidence=min(judgement["confidence"], comment_judgement["confidence"]),
+                    note_url=note_url,
+                    comment_text=reply.get("comment", ""),
+                    message_text=reply.get("message", ""),
+                )
+                # Demo 模式直接标记完成，不执行后续互动
+                update_status(record_id, "demo_pushed", comment_text=reply.get("comment", ""), message_text=reply.get("message", ""))
+            else:
+                # 完整模式保持原来的逻辑
+                pass
 
             # 控制处理速度
             time.sleep(3)
@@ -458,6 +488,7 @@ def main():
     """启动系统"""
     logger.info("=" * 50)
     logger.info("  小红书引流系统 启动")
+    logger.info(f"  模式: {'🧪 Demo（仅推送企业微信）' if DEMO_MODE else '🚀 完整模式'}")
     logger.info(f"  搜索间隔: {SEARCH_INTERVAL_MINUTES} 分钟")
     logger.info(f"  品牌: {', '.join(BRANDS_KEYWORDS.keys())}")
     logger.info(f"  操作时间: {OPERATE_HOUR_START}:00 - {OPERATE_HOUR_END}:00")
@@ -465,6 +496,10 @@ def main():
 
     # 初始化数据库
     init_db()
+
+    # Demo 模式发送启动通知
+    if DEMO_MODE and WEWORK_WEBHOOK_URL:
+        send_startup_notice(WEWORK_WEBHOOK_URL, DEMO_MODE, list(BRANDS_KEYWORDS.keys()))
 
     try:
         # 使用 APScheduler

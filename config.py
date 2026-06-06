@@ -54,3 +54,11 @@ BROWSER_SESSION_NAME = "xhs_leadgen"  # opencli browser session 名称
 # === 日志 ===
 LOG_DIR = "logs"
 LOG_LEVEL = "INFO"
+
+# === Demo 模式 ===
+# True: 只搜索 + AI 识别，识别到买家后推送到企业微信，不执行关注/评论/私信
+# False: 完整模式，执行关注/评论/私信
+DEMO_MODE = True
+
+# === 企业微信 Webhook（Demo 模式推送用）===
+WEWORK_WEBHOOK_URL = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c2138987-b9a1-49be-9b99-2f9c48ca2d20"

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS processed_notes (
     brand TEXT,                           -- 识别到的品牌
     role TEXT,                            -- buyer / seller / uncertain
     confidence REAL,                      -- AI 判断置信度
-    status TEXT DEFAULT 'pending',        -- pending / interested / followed / commented / messaged / skipped
+    status TEXT DEFAULT 'pending',        -- pending / interested / followed / commented / messaged / skipped / demo_pushed
     account_used TEXT,                    -- 操作的账号 profile
     phase1_time TIMESTAMP,               -- Phase1 执行时间
     phase2_time TIMESTAMP,               -- Phase2 执行时间
