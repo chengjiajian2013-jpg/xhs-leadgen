@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# DB
+db/leadgen.db
+
+# Logs
+logs/
+
+# Environment
+.env

@@ -1,0 +1,14 @@
+[
+    {
+        "name": "号1",
+        "profile": "ucffv3fv",
+        "is_primary": true,
+        "note": "默认 Chrome profile，登录小红书号1"
+    },
+    {
+        "name": "号2",
+        "profile": "profile2",
+        "is_primary": false,
+        "note": "Chrome Profile 2，需先创建并登录小红书号2"
+    }
+]
