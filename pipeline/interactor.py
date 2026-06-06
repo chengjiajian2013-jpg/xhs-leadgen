@@ -12,13 +12,14 @@
 import json
 import logging
 import random
-import re
 import subprocess
+import sys
 import time
 from typing import Optional
 
 from config import (
-    OPENCLI_PATH,
+    OPENCLI_CMD,
+    OPENCLI_NODE,
     SITE_SESSION,
     BROWSER_WINDOW,
     BROWSER_SESSION_NAME,
@@ -30,10 +31,19 @@ from pipeline.deduper import check_daily_limit, increment_daily_usage, log_actio
 
 logger = logging.getLogger("interactor")
 
+_is_windows = sys.platform == "win32"
+
+
+def _opencli_cmd(args: list[str]) -> list[str]:
+    """构造 opencli 命令列表（兼容 Windows node 直启）"""
+    if _is_windows:
+        return OPENCLI_NODE + args
+    return [OPENCLI_CMD] + args
+
 
 def _browser(args: list[str], profile: str = "") -> Optional[str]:
     """执行 opencli browser 命令"""
-    cmd = [OPENCLI_PATH]
+    cmd = _opencli_cmd([])
     if profile:
         cmd += ["--profile", profile]
     cmd += ["browser", BROWSER_SESSION_NAME] + args
@@ -54,7 +64,7 @@ def _browser(args: list[str], profile: str = "") -> Optional[str]:
         logger.warning(f"browser 命令超时: {args[:3]}")
         return None
     except FileNotFoundError:
-        logger.error(f"opencli 未找到: {OPENCLI_PATH}")
+        logger.error(f"opencli 命令失败: {OPENCLI_CMD}")
         return None
 
 
@@ -329,8 +339,8 @@ def _get_author_homepage(author_name: str, profile: str = "") -> Optional[str]:
     """通过搜索获取作者主页"""
     try:
         result = subprocess.run(
-            [OPENCLI_PATH, "xiaohongshu", "search", author_name, "-f", "json",
-             "--limit", "1", "--site-session", SITE_SESSION],
+            _opencli_cmd(["xiaohongshu", "search", author_name, "-f", "json",
+                          "--limit", "1", "--site-session", SITE_SESSION]),
             capture_output=True, text=True, timeout=60,
         )
         if result.returncode == 0 and result.stdout:

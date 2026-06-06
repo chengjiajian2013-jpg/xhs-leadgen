@@ -264,6 +264,7 @@ def _default_reply(brand: Optional[str], product: Optional[str]) -> dict:
         "comment": f"{brand_str}确实经典{product_str}，我上海专柜有渠道能拿到正品折扣，比官网省不少～",
         "message": (
             f"看到你也在看{brand_str}{product_str}，我刚好有上海专柜的渠道，"
-            f"保证正品还能拿到不错的折扣，感兴趣加🛰️聊聊？不买也可以先了解行情～"
+            f"保证正品还能拿到不错的折扣，感兴趣的加🛰️: joey0227_zou 聊聊？"
+            f"不买也可以先了解行情～"
         ),
     }

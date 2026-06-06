@@ -9,15 +9,18 @@
 """
 import json
 import logging
+import os
 import re
 import subprocess
+import sys
 import time
 from datetime import datetime, timedelta
 from typing import Optional
 
 from config import (
     BRANDS_KEYWORDS,
-    OPENCLI_PATH,
+    OPENCLI_CMD,
+    OPENCLI_NODE,
     DEFAULT_PROFILE,
     SITE_SESSION,
     SEARCH_LIMIT,
@@ -26,22 +29,50 @@ from config import (
 
 logger = logging.getLogger("searcher")
 
+# Windows 下 .cmd 经由 cmd.exe 执行时会把 URL 中的 & 解释为命令分隔符，
+# 导致 xsec_source= 后的部分被当成新命令。直接走 node 启动 main.js 绕过。
+_is_windows = sys.platform == "win32"
+
 
 def _run_opencli(args: list[str]) -> Optional[str]:
     """执行 opencli 命令，返回 stdout 字符串"""
-    cmd = [OPENCLI_PATH] + args
+    if _is_windows:
+        cmd = OPENCLI_NODE + args
+    else:
+        cmd = [OPENCLI_CMD] + args
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
-            text=True,
             timeout=120,
         )
+        # Windows 下解码：先 utf-8，失败则用 gbk
+        stdout = result.stdout
+        stderr = result.stderr
+
+        if stdout:
+            try:
+                stdout = stdout.decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    stdout = stdout.decode("gbk")
+                except UnicodeDecodeError:
+                    stdout = stdout.decode("gbk", errors="replace")
+
+        if stderr:
+            try:
+                stderr = stderr.decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    stderr = stderr.decode("gbk")
+                except UnicodeDecodeError:
+                    stderr = stderr.decode("gbk", errors="replace")
+
         if result.returncode != 0:
-            stderr = result.stderr.strip()
-            logger.warning(f"opencli 命令失败: {' '.join(cmd[:6])}... | {stderr}")
+            stderr_text = stderr.strip() if stderr else ""
+            logger.warning(f"opencli 命令失败: {' '.join(cmd[:6])}... | {stderr_text[:200]}")
             return None
-        return result.stdout
+        return stdout
     except subprocess.TimeoutExpired:
         logger.warning(f"opencli 命令超时: {' '.join(cmd[:6])}...")
         return None
@@ -170,8 +201,16 @@ def get_all_search_results() -> dict[str, list[dict]]:
         brand_notes = []
         seen_urls = set()
 
-        for kw in keywords:
-            query = f"{brand} {kw}"
+        for kw_entry in keywords:
+            # 兼容 dict 格式（带 enabled 开关）和旧版字符串格式
+            if isinstance(kw_entry, dict):
+                if not kw_entry.get("enabled", True):
+                    continue
+                keyword = kw_entry["keyword"]
+            else:
+                keyword = kw_entry
+
+            query = f"{brand} {keyword}"
             results = search_notes(query)
 
             for note in results:
@@ -195,6 +234,19 @@ def extract_note_id(url: str) -> str:
     if match:
         return match.group(1)
     return url
+
+
+def convert_to_explore_url(url: str) -> str:
+    """将 search_result URL 转换为 explore 格式（手机端可打开）"""
+    note_id = extract_note_id(url)
+    if not note_id:
+        return url
+    # 提取 xsec_token
+    match = re.search(r"xsec_token=([^&]+)", url)
+    token = match.group(1) if match else ""
+    if token:
+        return f"https://www.xiaohongshu.com/explore/{note_id}?xsec_token={token}"
+    return f"https://www.xiaohongshu.com/explore/{note_id}"
 
 
 def extract_author_id_from_url(author_url: str) -> str:

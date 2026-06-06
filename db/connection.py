@@ -2,25 +2,25 @@
 SQLite 数据库连接管理
 """
 import sqlite3
-import os
+import threading
 from pathlib import Path
 
 DB_DIR = Path(__file__).parent
 DB_PATH = DB_DIR / "leadgen.db"
 SCHEMA_PATH = DB_DIR / "schema.sql"
 
-_connection: sqlite3.Connection | None = None
+_local = threading.local()
 
 
 def get_connection() -> sqlite3.Connection:
-    """获取数据库连接（单例模式）"""
-    global _connection
-    if _connection is None:
-        _connection = sqlite3.connect(str(DB_PATH))
-        _connection.row_factory = sqlite3.Row
-        _connection.execute("PRAGMA journal_mode=WAL")
-        _connection.execute("PRAGMA foreign_keys=ON")
-    return _connection
+    """获取当前线程的数据库连接（每个线程独立连接）"""
+    if not hasattr(_local, "connection") or _local.connection is None:
+        conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        _local.connection = conn
+    return _local.connection
 
 
 def init_db():

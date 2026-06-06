@@ -51,6 +51,7 @@ from pipeline.searcher import (
     get_note_detail,
     get_note_comments,
     extract_note_id,
+    convert_to_explore_url,
 )
 from pipeline.analyzer import judge_note, judge_comments, generate_reply
 from pipeline.notifier import send_buyer_alert, send_startup_notice
@@ -104,7 +105,11 @@ def _get_next_account() -> dict:
 
 
 def _is_operating_hours() -> bool:
-    """检查当前是否在操作时间窗口内"""
+    """检查当前是否在操作时间窗口内
+    Demo 模式不受时间窗口限制
+    """
+    if DEMO_MODE:
+        return True
     now = datetime.now()
     hour = now.hour
     if OPERATE_HOUR_START <= OPERATE_HOUR_END:
@@ -242,6 +247,7 @@ def _search_and_classify():
 
             # Demo 模式：推送到企业微信
             if DEMO_MODE:
+                explore_url = convert_to_explore_url(note_url)
                 send_buyer_alert(
                     webhook_url=WEWORK_WEBHOOK_URL,
                     title=title,
@@ -249,7 +255,7 @@ def _search_and_classify():
                     brand=detected_brand,
                     product=specific_product or "",
                     confidence=min(judgement["confidence"], comment_judgement["confidence"]),
-                    note_url=note_url,
+                    note_url=explore_url,
                     comment_text=reply.get("comment", ""),
                     message_text=reply.get("message", ""),
                 )

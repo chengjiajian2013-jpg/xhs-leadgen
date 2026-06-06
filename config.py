@@ -1,12 +1,33 @@
 # 小红书引流系统 - 配置
 
 # === 品牌与搜索关键词 ===
-# 每轮搜索的组合：每个品牌的每个关键词各搜一次
+# 每轮搜索的组合：每个品牌下可启用/禁用特定关键词
+# enabled: true 表示该关键词生效，false 表示跳过
 BRANDS_KEYWORDS = {
-    "香奈儿": ["额度", "折扣"],
-    "Dior": ["额度", "折扣"],
-    "LV": ["额度", "折扣"],
-    "卡地亚": ["额度", "折扣"],
+    "香奈儿": [
+        {"keyword": "额度", "enabled": True},
+        {"keyword": "折扣", "enabled": True},
+        {"keyword": "全新", "enabled": True},
+        {"keyword": "刚抱出", "enabled": True},
+    ],
+    "Dior": [
+        {"keyword": "额度", "enabled": True},
+        {"keyword": "折扣", "enabled": True},
+        {"keyword": "全新", "enabled": True},
+        {"keyword": "刚抱出", "enabled": True},
+    ],
+    "LV": [
+        {"keyword": "额度", "enabled": True},
+        {"keyword": "折扣", "enabled": True},
+        {"keyword": "全新", "enabled": True},
+        {"keyword": "刚抱出", "enabled": True},
+    ],
+    "卡地亚": [
+        {"keyword": "额度", "enabled": True},
+        {"keyword": "折扣", "enabled": True},
+        {"keyword": "全新", "enabled": True},
+        {"keyword": "刚抱出", "enabled": True},
+    ],
 }
 
 # === 搜索参数 ===
@@ -38,14 +59,20 @@ PHASE2_DELAY_HOURS_MAX = 6   # Phase1 → Phase2 最大等待
 PHASE3_DELAY_HOURS = 24      # Phase2 → Phase3 等待
 
 # === LLM API 配置 ===
-LLM_API_URL = ""            # LLM API 地址 (如 https://api.openai.com/v1)
-LLM_API_KEY = ""            # API Key (从环境变量读取优先)
-LLM_MODEL = "gpt-4o"       # 模型名
+LLM_API_URL = "https://api.deepseek.com/chat/completions"  # DeepSeek API 地址
+LLM_API_KEY = "sk-2953468f14f0462791cc456ee7f60baf"          # API Key (从环境变量读取优先)
+LLM_MODEL = "deepseek-chat"       # 模型名 (deepseek-chat = V4 Flash)
 LLM_MAX_TOKENS = 1024
 LLM_TEMPERATURE = 0.7
 
 # === opencli 配置 ===
-OPENCLI_PATH = "opencli"    # opencli 命令路径
+OPENCLI_CMD = "opencli.cmd"    # Windows 下 .cmd 包装器，subprocess 会自动用 cmd.exe 执行
+# 用 node 直接执行 opencli 的主 js，避免 .cmd 经由 cmd.exe 时 &
+# 把 URL 参数里的 & 解释为命令分隔符
+OPENCLI_NODE = [
+    "node",
+    r"C:\Users\Netis\AppData\Roaming\npm\node_modules\@jackwener\opencli\dist\src\main.js",
+]
 DEFAULT_PROFILE = "ucffv3fv"  # 默认 Chrome profile (号1)
 SITE_SESSION = "persistent"   # session 模式
 BROWSER_WINDOW = "background" # 浏览器窗口模式
