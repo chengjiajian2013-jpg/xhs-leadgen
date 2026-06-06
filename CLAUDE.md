@@ -28,6 +28,7 @@ APScheduler (10min) → opencli search → LLM 三层过滤 → opencli browser 
 - **反风控守则**：关注 ≤30/天/号，评论 ≤20/天/号，私信 ≤15/天/号，间隔 30-90s 随机
 - **话术红线**：突出"上海专柜""正品"，但用 🛰️ 替代"微信"
 - **APScheduler 非必需**：未安装时自动降级为 60s 轮询简单循环
+- **Demo 模式**：`config.py` 中 `DEMO_MODE = True` 时只搜索+AI识别+推企业微信，不执行真实互动
 
 ## 命令速查
 

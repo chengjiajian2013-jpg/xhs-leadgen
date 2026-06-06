@@ -30,9 +30,11 @@ bash scripts/login.sh
 export LLM_API_KEY="your-api-key"
 export LLM_API_URL="https://api.openai.com/v1/chat/completions"
 
-# 4. 启动
+# 4. 启动（默认 Demo 模式：只推送企业微信，不执行真实互动）
 python main.py
 ```
+
+默认以 **Demo 模式**运行：AI 识别到买家后推送消息到企业微信群机器人，不执行关注/评论/私信。确认数据正常后，将 `config.py` 中 `DEMO_MODE = False` 开启完整模式。
 
 ## 配置
 
@@ -58,6 +60,7 @@ python main.py
 │   ├── searcher.py      # opencli 搜索封装
 │   ├── analyzer.py      # AI 三层过滤 + 话术生成
 │   ├── interactor.py    # 浏览器自动化操作
+│   ├── notifier.py      # 企业微信推送
 │   └── deduper.py       # SQLite 去重
 ├── db/                  # 数据库层
 ├── prompts/             # AI prompt 模板
