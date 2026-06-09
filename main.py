@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import sys
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -461,13 +462,26 @@ def _process_phase3():
 # 调度器
 # ============================================================
 
+# 搜索任务独立线程 + 锁，确保同一时间只有一轮搜索在跑
+_search_lock = threading.Lock()
+
 def run_search_job():
-    """搜索任务"""
-    logger.info("启动搜索任务...")
-    try:
-        _search_and_classify()
-    except Exception as e:
-        logger.error(f"搜索任务异常: {e}", exc_info=True)
+    """搜索任务（在独立线程中执行，不阻塞调度器）"""
+    if not _search_lock.acquire(blocking=False):
+        logger.warning("上一轮搜索仍在运行，跳过本轮")
+        return
+
+    def _do_search():
+        try:
+            logger.info("启动搜索任务...")
+            _search_and_classify()
+        except Exception as e:
+            logger.error(f"搜索任务异常: {e}", exc_info=True)
+        finally:
+            _search_lock.release()
+
+    t = threading.Thread(target=_do_search, daemon=True, name="search-worker")
+    t.start()
 
 
 def run_interaction_job():
@@ -514,11 +528,13 @@ def main():
         scheduler = BlockingScheduler(timezone="Asia/Shanghai")
 
         # 搜索任务（每10分钟）
+        # 在独立线程中执行，用锁防止堆积；max_instances=10 避免调度器卡住
         scheduler.add_job(
             run_search_job,
             "interval",
             minutes=SEARCH_INTERVAL_MINUTES,
             id="search",
+            max_instances=10,
             next_run_time=datetime.now(),
         )
 

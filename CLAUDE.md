@@ -24,11 +24,12 @@ APScheduler (10min) → opencli search → LLM 三层过滤 → opencli browser 
 - **opencli 是唯一的外部依赖**：所有小红书操作（搜索、读取、关注、评论、私信）都走 opencli daemon，不用 Playwright/Puppeteer
 - **登录态共享**：`opencli xiaohongshu` 和 `opencli browser` 共享同一个 Chrome Browser Bridge，一次 `login` 后不用二次登录
 - **双账号隔离**：通过 `opencli --profile` 切换 Chrome 用户配置文件实现多账号，不是在一个 Chrome 实例里切 Cookie
-- **操作时间窗口**：09:00-22:00，其余时间不执行
+- **操作时间窗口**：09:00-22:00，其余时间不执行（Demo 模式忽略此限制）
 - **反风控守则**：关注 ≤30/天/号，评论 ≤20/天/号，私信 ≤15/天/号，间隔 30-90s 随机
 - **话术红线**：突出"上海专柜""正品"，但用 🛰️ 替代"微信"
 - **APScheduler 非必需**：未安装时自动降级为 60s 轮询简单循环
 - **Demo 模式**：`config.py` 中 `DEMO_MODE = True` 时只搜索+AI识别+推企业微信，不执行真实互动
+- **搜索线程安全**：搜索任务在独立 daemon 线程中运行，`threading.Lock` 防止堆积，调度器不会被阻塞
 
 ## 命令速查
 
@@ -62,9 +63,10 @@ opencli xiaohongshu search "香奈儿 折扣" --limit 5 -f json --site-session p
 | 主题 | 位置 |
 |------|------|
 | 完整设计文档 | `docs/superpowers/specs/2026-06-06-xhs-leadgen-design.md` |
-| 搜索配置 | `config.py` — BRANDS_KEYWORDS |
+| 搜索配置 | `config.py` — BRANDS_KEYWORDS（每关键词可独立启用/禁用） |
 | AI 判断逻辑 | `prompts/judge_buyer.txt`, `prompts/judge_comment.txt` |
-| 话术模板 | `prompts/generate_reply.txt` |
+| 话术模板 | `prompts/generate_reply.txt`（卫星号: joey0227_zou） |
+| 企业微信通知 | `pipeline/notifier.py` |
 | DB 方案 | `db/schema.sql` |
 | 账号配置 | `accounts.json` |
 | GitHub | https://github.com/chengjiajian2013-jpg/xhs-leadgen |
